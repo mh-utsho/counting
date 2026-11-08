@@ -1,0 +1,41 @@
+# ===================== Crowd Counter Configuration =====================
+
+# --- Video source ---
+source: 0                 # 0 = laptop webcam, অথবা video file path (যেমন: "test.mp4")
+frame_width: 1280         # webcam resolution (video file হলে ignore হবে)
+frame_height: 720
+
+# --- Detection (YOLO11n) ---
+model: yolo11n.pt         # প্রথমবার চালালে নিজে download হবে
+device: auto              # auto | cpu | 0 (প্রথম GPU)
+imgsz: 640                # ছোট করলে (480/416) CPU তে দ্রুত হয়
+conf: 0.35                # detection confidence (কম = বেশি detection, বেশি false positive)
+iou: 0.5
+
+# --- Tracking (ByteTrack) ---
+tracker: trackers/bytetrack.yaml
+
+# --- Counting ---
+# কোন বিন্দু ROI এর ভেতরে আছে কিনা দেখে মানুষ গোনা হবে:
+#   center : bounding box এর মাঝখান   (webcam / desk test এর জন্য ভালো)
+#   bottom : bounding box এর নিচের মাঝখান = পায়ের কাছে (CCTV / উঁচু camera এর জন্য ভালো)
+anchor: center
+
+# --- Crowd alert ---
+threshold: 3              # ROI তে count > threshold হলে "ভিড়" ধরা হবে
+alert_duration: 2.0       # এত সেকেন্ড টানা threshold এর বেশি থাকলে ALERT
+clear_delay: 0.5          # count ঠিক হওয়ার পর এত সেকেন্ড অপেক্ষা করে alert বন্ধ হবে (flicker ঠেকাতে)
+
+# --- ROI ---
+roi_file: roi.json        # 'r' চেপে আঁকা ROI এখানে save হয়
+# roi_file না থাকলে এই default ROI ব্যবহার হবে (0.0-1.0 normalized, x y)
+default_roi:
+  - [0.10, 0.10]
+  - [0.90, 0.10]
+  - [0.90, 0.90]
+  - [0.10, 0.90]
+
+# --- Display ---
+window_name: "Crowd Counter"
+show_ids: true
+output_dir: output        # screenshot এখানে save হবে
