@@ -1,33 +1,33 @@
 # 👥 People Counting & Crowd Threshold Alert
 
-Laptop webcam (বা video file) থেকে **YOLO11n** দিয়ে মানুষ detect, **ByteTrack** দিয়ে tracking, একটি **ROI** এর ভেতরের মানুষ গোনা, এবং count **threshold ছাড়িয়ে টানা ২ সেকেন্ড** থাকলে **CROWD ALERT** দেখানো।
+Detect people from a laptop webcam (or a video file) with **YOLO11n**, track them with **ByteTrack**, count how many are inside a **Region of Interest (ROI)**, and raise a **CROWD ALERT** when the count stays **above a threshold for 2 seconds**.
 
-## ফিচার
-- YOLO11n (শুধু `person` class) + ByteTrack (প্রতিজন মানুষের স্থায়ী ID)
-- Polygon ROI — রান করার সময়ই মাউস দিয়ে আঁকা যায়, `roi.json` এ save হয়
-- ROI এর ভেতরে এই মুহূর্তের count + মোট unique ID
-- Alert: count > threshold **টানা ২ সেকেন্ড** হলে ALERT (সময়-ভিত্তিক, FPS এর উপর নির্ভর করে না)
-- ২ সেকেন্ড পূরণের আগে orange progress bar (WARNING), ALERT এ লাল blinking border + banner
-- Alert শেষ হওয়ার সময় ছোট delay (flicker ঠেকাতে)
-- Live threshold বদল (`+`/`-`), screenshot (`s`)
+## Features
+- YOLO11n person detection (COCO `person` class only) + ByteTrack (persistent ID per person)
+- Polygon ROI, drawn with the mouse at runtime and saved to `roi.json`
+- Live count inside the ROI plus total unique IDs seen in the ROI
+- Alert fires when `count > threshold` continuously for 2 seconds (time-based, independent of FPS)
+- Orange progress bar (WARNING) while waiting for the 2 seconds, then red blinking border and banner (ALERT)
+- Short clear delay when the crowd drops, to prevent flickering
+- Change the threshold live (`+` / `-`) and save screenshots (`s`)
 
-## ফোল্ডার structure
+## Folder structure
 ```
 crowd_counter/
 ├── main.py              # entry point (main loop)
-├── config.yaml          # সব সেটিং এক জায়গায়
+├── config.yaml          # all settings in one place
 ├── requirements.txt
-├── setup_ubuntu.sh      # Ubuntu এ এক কমান্ডে setup
-├── roi.json             # (auto) আঁকা ROI — প্রথমবার রানের পর তৈরি হয়
+├── setup_ubuntu.sh      # one-command Ubuntu setup
+├── roi.json             # (auto-created) saved ROI after you draw one
 ├── trackers/
 │   └── bytetrack.yaml   # ByteTrack tuning
 ├── src/
-│   ├── config.py        # config load + default
+│   ├── config.py        # config loading + defaults
 │   ├── detector.py      # YOLO11n + ByteTrack wrapper
-│   ├── roi.py           # ROI polygon, point-in-polygon, মাউসে আঁকা
-│   ├── alert.py         # threshold + ২ সেকেন্ড state machine
-│   └── visualizer.py    # box, ROI, HUD, alert banner
-└── output/              # screenshot এখানে
+│   ├── roi.py           # ROI polygon, point-in-polygon, mouse drawing
+│   ├── alert.py         # threshold + 2-second state machine
+│   └── visualizer.py    # boxes, ROI, HUD, alert banner
+└── output/              # screenshots are saved here
 ```
 
 ## Ubuntu setup
@@ -36,7 +36,7 @@ cd crowd_counter
 chmod +x setup_ubuntu.sh
 ./setup_ubuntu.sh
 ```
-ম্যানুয়ালি করতে চাইলে:
+Or manually:
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv python3-pip libgl1 libglib2.0-0 v4l-utils
@@ -45,77 +45,77 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-> GPU না থাকলে ডাউনলোড ছোট রাখতে `pip install -r requirements.txt` এর **আগে**:
+> No GPU? To keep the download small, run this **before** `pip install -r requirements.txt`:
 > `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu`
 
-## রান করার নিয়ম
+## How to run
 ```bash
 source .venv/bin/activate
-python main.py                          # webcam, config.yaml এর সেটিং
-python main.py --source 1               # অন্য camera
-python main.py --source test.mp4        # video file
+python main.py                          # webcam, settings from config.yaml
+python main.py --source 1               # a different camera
+python main.py --source test.mp4        # a video file
 python main.py --threshold 5 --duration 2
 python main.py --conf 0.45
-python main.py --reset-roi              # সেভ করা ROI মুছে default এ ফেরা
+python main.py --reset-roi              # delete the saved ROI, go back to default
 ```
-প্রথমবার `yolo11n.pt` নিজে download হবে (ইন্টারনেট লাগবে)। প্রজেক্ট ফোল্ডার থেকেই চালান।
+On first run `yolo11n.pt` is downloaded automatically (internet required). Run from the project folder.
 
-### Keyboard shortcut
-| Key | কাজ |
-|-----|-----|
-| `q` / `Esc` | বন্ধ |
-| `r` | নতুন ROI আঁকা |
-| `+` / `-` | threshold বাড়ানো/কমানো (live) |
-| `s` | screenshot (`output/`) |
+### Keyboard shortcuts
+| Key | Action |
+|-----|--------|
+| `q` / `Esc` | Quit |
+| `r` | Draw a new ROI |
+| `+` / `-` | Raise / lower the threshold (live) |
+| `s` | Save a screenshot to `output/` |
 
-## Threshold সেট করার উপায়
-এটা "ROI তে এর **বেশি** মানুষ হলে ভিড়" — অর্থাৎ `count > threshold`।
+## Setting the threshold
+The rule is `count > threshold`, i.e. "more than N people in the ROI".
 
-1. **স্থায়ীভাবে:** `config.yaml` এ `threshold: 3` বদলান।
-2. **এক রানের জন্য:** `python main.py --threshold 5`
-3. **চলন্ত অবস্থায়:** `+` / `-` চাপুন (config ফাইল বদলায় না)।
+1. **Permanently:** edit `threshold: 3` in `config.yaml`.
+2. **For one run:** `python main.py --threshold 5`
+3. **While running:** press `+` / `-` (does not modify the config file).
 
-সময় বদলাতে: `alert_duration: 2.0` (বা `--duration 3`)।
-Alert বন্ধ হওয়ার delay: `clear_delay: 0.5`।
+To change the 2-second delay, edit `alert_duration: 2.0` (or use `--duration 3`).
+To change how long the alert lingers after the crowd drops, edit `clear_delay: 0.5`.
 
-**Test এর টিপস:** webcam এ একা থাকলে `--threshold 0` দিন — আপনি ROI তে ঢুকে ২ সেকেন্ড থাকলেই ALERT আসবে।
+**Testing tip:** if you are alone in front of the webcam, use `--threshold 0`. The alert will fire as soon as you stay in the ROI for 2 seconds.
 
-## ROI কিভাবে বদলাবে
-**পদ্ধতি ১ — মাউস দিয়ে (সহজ):** রান করার সময় `r` চাপুন। frame freeze হবে:
-- **Left click** = point যোগ, **Right click** = শেষ point undo, `c` = সব মুছো
-- **Enter** = নিশ্চিত (কমপক্ষে ৩ point), **Esc** = বাতিল
+## Changing the ROI
+**Method 1 – with the mouse (easiest):** press `r` while running. The frame freezes:
+- **Left click** = add a point, **Right click** = undo last point, `c` = clear all
+- **Enter** = confirm (at least 3 points), **Esc** = cancel
 
-ROI সাথে সাথে `roi.json` এ save হয়, পরের রানেও থাকে।
+The ROI is saved immediately to `roi.json` and is reused on the next run.
 
-**পদ্ধতি ২ — হাতে:** `config.yaml` এর `default_roi` (বা `roi.json` এর `points`) এডিট করুন। মান `0.0–1.0` normalized `[x, y]`, তাই resolution বদলালেও ঠিক থাকে।
+**Method 2 – by hand:** edit `default_roi` in `config.yaml` (or `points` in `roi.json`). Values are normalized `[x, y]` between `0.0` and `1.0`, so they stay valid at any resolution.
 ```yaml
 default_roi:
-  - [0.10, 0.10]   # উপরে-বামে
-  - [0.90, 0.10]   # উপরে-ডানে
-  - [0.90, 0.90]   # নিচে-ডানে
-  - [0.10, 0.90]   # নিচে-বামে
+  - [0.10, 0.10]   # top-left
+  - [0.90, 0.10]   # top-right
+  - [0.90, 0.90]   # bottom-right
+  - [0.10, 0.90]   # bottom-left
 ```
-> `roi.json` থাকলে সেটাই অগ্রাধিকার পায়। default এ ফিরতে `--reset-roi` বা ফাইলটি মুছুন।
+> If `roi.json` exists it takes priority. To return to the default, use `--reset-roi` or delete the file.
 
-**কোন বিন্দু ROI এ আছে সেটা:** `anchor: center` (box এর মাঝখান, webcam এর জন্য ভালো) অথবা `anchor: bottom` (পায়ের কাছে, CCTV এর জন্য ভালো)।
+**Which point decides "inside the ROI":** `anchor: center` (middle of the box, best for webcams) or `anchor: bottom` (bottom-center, near the feet, best for CCTV / elevated cameras).
 
-## Performance টিপস
-- CPU ধীর হলে: `imgsz: 480` বা `416`, `frame_width/height: 640/480`
-- ভুল detection বেশি হলে `conf` বাড়ান (0.45–0.5); মানুষ miss হলে কমান (0.25–0.3)
-- ID ঘনঘন বদলালে `trackers/bytetrack.yaml` এ `track_buffer` বাড়ান (যেমন 60)
-- GPU থাকলে `device: 0`
+## Performance tips
+- Slow CPU: set `imgsz: 480` or `416`, and `frame_width/height: 640/480`
+- Too many false detections: raise `conf` (0.45–0.5). Missing people: lower it (0.25–0.3)
+- IDs changing too often: increase `track_buffer` in `trackers/bytetrack.yaml` (e.g. 60)
+- Have a GPU: set `device: 0`
 
-## সমস্যা সমাধান
-| সমস্যা | সমাধান |
-|--------|--------|
-| `Video source খোলা যায়নি` | `v4l2-ctl --list-devices` চালিয়ে index দেখুন; `--source 1` চেষ্টা করুন; অন্য app (Zoom/Cheese) বন্ধ করুন |
-| `Permission denied /dev/video0` | `sudo usermod -aG video $USER` তারপর logout/login |
-| window খুলছে না (Wayland/SSH) | local desktop session এ চালান; SSH এ `ssh -X` লাগবে |
+## Troubleshooting
+| Problem | Fix |
+|---------|-----|
+| `Could not open video source` | Run `v4l2-ctl --list-devices` to find the index; try `--source 1`; close other apps using the camera (Zoom, Cheese) |
+| `Permission denied /dev/video0` | `sudo usermod -aG video $USER`, then log out and back in |
+| Window does not open (Wayland / SSH) | Run in a local desktop session; over SSH use `ssh -X` |
 | `libGL.so.1` error | `sudo apt install -y libgl1 libglib2.0-0` |
-| `lap` সংক্রান্ত error | `pip install lapx` |
+| `lap`-related error | `pip install lapx` |
 
 ## Pipeline
 ```
-Webcam → YOLO11n (person) → ByteTrack (ID) → ROI check → count
-      → count > threshold ? ২ সেকেন্ড টানা → CROWD ALERT
+Webcam → YOLO11n (person) → ByteTrack (IDs) → ROI check → count
+      → count > threshold for 2 s continuously → CROWD ALERT
 ```

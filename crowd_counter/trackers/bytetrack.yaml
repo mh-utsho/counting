@@ -1,8 +1,8 @@
-# ByteTrack parameters (Ultralytics format). এখানে tuning করা যাবে।
+# ByteTrack parameters (Ultralytics format). Tune tracking here.
 tracker_type: bytetrack
-track_high_thresh: 0.25   # প্রথম ধাপের association threshold
-track_low_thresh: 0.1     # দ্বিতীয় ধাপ (low-confidence box) threshold
-new_track_thresh: 0.25    # নতুন track শুরুর threshold
-track_buffer: 30          # হারিয়ে যাওয়া track কত frame ধরে রাখবে
+track_high_thresh: 0.25   # first-stage association threshold
+track_low_thresh: 0.1     # second-stage (low-confidence boxes) threshold
+new_track_thresh: 0.25    # threshold to start a new track
+track_buffer: 30          # how many frames to keep a lost track
 match_thresh: 0.8         # matching threshold
 fuse_score: True

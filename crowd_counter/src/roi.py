@@ -12,7 +12,7 @@ class ROI:
     def __init__(self, points):
         self.points = np.asarray(points, dtype=np.float32)
         if len(self.points) < 3:
-            raise ValueError("ROI তে কমপক্ষে ৩টি point লাগবে")
+            raise ValueError("ROI needs at least 3 points")
 
     @classmethod
     def load(cls, path, default_points):
@@ -22,7 +22,7 @@ class ROI:
                 with open(path, "r", encoding="utf-8") as f:
                     return cls(json.load(f)["points"])
             except Exception as e:  # corrupted file -> fall back
-                print(f"[WARN] {path} পড়া যায়নি ({e}); default ROI ব্যবহার হচ্ছে।")
+                print(f"[WARN] Could not read {path} ({e}); using default ROI.")
         return cls(default_points)
 
     def save(self, path):

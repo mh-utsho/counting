@@ -9,11 +9,11 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 
-# GPU না থাকলে (শুধু CPU) ছোট torch চাইলে নিচের লাইনটির comment তুলে দিন:
+# No GPU (CPU only)? Uncomment the next line to install the smaller CPU-only PyTorch:
 # pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 pip install -r requirements.txt
 
 echo ""
-echo "Setup complete. এখন চালান:"
+echo "Setup complete. Now run:"
 echo "  source .venv/bin/activate && python main.py"

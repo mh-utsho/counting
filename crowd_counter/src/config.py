@@ -32,7 +32,7 @@ def load_config(path):
             user = yaml.safe_load(f) or {}
         cfg.update(user)
     else:
-        print(f"[WARN] {path} পাওয়া যায়নি, default config ব্যবহার হচ্ছে।")
+        print(f"[WARN] {path} not found, using default config.")
     if cfg["anchor"] not in ("center", "bottom"):
-        raise ValueError("config: anchor অবশ্যই 'center' অথবা 'bottom' হতে হবে")
+        raise ValueError("config: anchor must be 'center' or 'bottom'")
     return cfg

@@ -9,7 +9,7 @@ from pathlib import Path
 import cv2
 
 ROOT = Path(__file__).resolve().parent
-os.chdir(ROOT)  # model download & relative paths সবসময় project root এ হবে
+os.chdir(ROOT)  # model download & relative paths are always resolved from the project root
 sys.path.insert(0, str(ROOT))
 
 from src.alert import CrowdAlert              # noqa: E402
@@ -22,11 +22,11 @@ from src.visualizer import draw_frame         # noqa: E402
 def parse_args():
     p = argparse.ArgumentParser(description="People counting & crowd alert")
     p.add_argument("--config", default="config.yaml")
-    p.add_argument("--source", help="camera index (0) অথবা video file path")
-    p.add_argument("--threshold", type=int, help="config এর threshold override")
+    p.add_argument("--source", help="camera index (e.g. 0) or video file path")
+    p.add_argument("--threshold", type=int, help="override threshold from config")
     p.add_argument("--duration", type=float, help="alert duration (sec) override")
     p.add_argument("--conf", type=float, help="detection confidence override")
-    p.add_argument("--reset-roi", action="store_true", help="saved ROI মুছে default এ ফিরুন")
+    p.add_argument("--reset-roi", action="store_true", help="delete the saved ROI and go back to the default")
     return p.parse_args()
 
 
@@ -40,9 +40,9 @@ def open_source(source, width, height):
     else:
         cap = cv2.VideoCapture(source)
     if not cap.isOpened():
-        sys.exit(f"[ERROR] Video source খোলা যায়নি: {source}\n"
-                 "        'v4l2-ctl --list-devices' দিয়ে camera index দেখুন, "
-                 "অথবা অন্য program camera ব্যবহার করছে কিনা দেখুন।")
+        sys.exit(f"[ERROR] Could not open video source: {source}\n"
+                 "        Run 'v4l2-ctl --list-devices' to find the camera index, "
+                 "or check whether another program is using the camera.")
     return cap
 
 
@@ -61,10 +61,10 @@ def main():
     roi_path = Path(cfg["roi_file"])
     if args.reset_roi and roi_path.exists():
         roi_path.unlink()
-        print(f"[INFO] {roi_path} মুছে ফেলা হয়েছে।")
+        print(f"[INFO] Deleted {roi_path}.")
     roi = ROI.load(roi_path, cfg["default_roi"])
 
-    print("[INFO] Model load হচ্ছে (প্রথমবার yolo11n.pt download হতে পারে)...")
+    print("[INFO] Loading model (yolo11n.pt is downloaded on first run)...")
     tracker = PersonTracker(cfg["model"], cfg["tracker"], cfg["conf"], cfg["iou"],
                             cfg["imgsz"], cfg["device"])
     alert = CrowdAlert(cfg["threshold"], cfg["alert_duration"], cfg["clear_delay"])
@@ -79,11 +79,11 @@ def main():
     fps, last_t, was_active = 0.0, time.monotonic(), False
     frame = None
 
-    print("[INFO] শুরু হয়েছে। q = quit | r = ROI আঁকা | +/- = threshold | s = screenshot")
+    print("[INFO] Started. q = quit | r = draw ROI | +/- = threshold | s = screenshot")
     while True:
         ok, frame = cap.read()
         if not ok:
-            print("[INFO] Frame পাওয়া যায়নি (video শেষ বা camera সমস্যা)।")
+            print("[INFO] No frame received (end of video or camera problem).")
             break
         h, w = frame.shape[:2]
 
@@ -97,7 +97,7 @@ def main():
         state = alert.update(count)
         if state.active != was_active:
             stamp = time.strftime("%H:%M:%S")
-            print(f"[{stamp}] {'CROWD ALERT শুরু' if state.active else 'Alert শেষ'} "
+            print(f"[{stamp}] {'CROWD ALERT started' if state.active else 'Alert cleared'} "
                   f"(count={count}, threshold={alert.threshold})")
             was_active = state.active
 
@@ -118,7 +118,7 @@ def main():
                 roi = new_roi
                 roi.save(roi_path)
                 unique_ids.clear()
-                print(f"[INFO] নতুন ROI save হয়েছে: {roi_path}")
+                print(f"[INFO] New ROI saved: {roi_path}")
         elif key in (ord("+"), ord("=")):
             alert.threshold += 1
         elif key in (ord("-"), ord("_")):

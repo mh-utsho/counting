@@ -34,9 +34,9 @@ class PersonTracker:
     def track(self, frame):
         results = self.model.track(
             frame,
-            persist=True,                 # frame এর মধ্যে track state ধরে রাখে
+            persist=True,                 # keep track state between frames
             tracker=self.tracker_cfg,     # ByteTrack
-            classes=[PERSON_CLASS_ID],    # শুধু মানুষ
+            classes=[PERSON_CLASS_ID],    # people only
             conf=self.conf,
             iou=self.iou,
             imgsz=self.imgsz,

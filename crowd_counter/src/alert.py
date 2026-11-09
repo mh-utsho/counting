@@ -5,10 +5,10 @@ from dataclasses import dataclass
 
 @dataclass
 class AlertState:
-    active: bool          # ALERT এখন চালু?
-    pending: bool         # threshold ছাড়িয়েছে, কিন্তু এখনো দুই সেকেন্ড হয়নি
-    elapsed: float        # কতক্ষণ ধরে টানা threshold এর বেশি
-    duration: float       # প্রয়োজনীয় সময়
+    active: bool          # is the alert currently on?
+    pending: bool         # over threshold, but the 2 seconds have not elapsed yet
+    elapsed: float        # how long the count has been continuously above threshold
+    duration: float       # required time
 
 
 class CrowdAlert:
